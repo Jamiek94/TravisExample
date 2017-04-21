@@ -1,0 +1,61 @@
+notifications:
+  email:
+    recipients:
+      - youremail@example.com
+    on_success: always # default: change
+    on_failure: always # default: always
+
+sudo: required
+
+language: php
+
+php:
+  - '7.1'
+
+services: mongodb
+
+env:
+  - TRAVIS_NODE_VERSION="6"
+
+install:
+  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install $TRAVIS_NODE_VERSION
+  - npm install
+
+before_script:
+  - phpenv config-rm xdebug.ini
+  - cp .env.travis .env
+  - pecl install mongodb
+  - sleep 10
+  - mongo test --eval 'db.addUser("test", "test");'
+  - composer install
+  - php artisan key:generate
+  - npm install
+  - npm install -g gulp
+  - npm install gulp
+  - gulp production
+
+script:
+  - phpdbg -qrr vendor/bin/phpunit --coverage-clover=coverage.xml
+
+after_success:
+  - rm -rf node_modules
+  - rm -rf .git
+  - rm -rf tests
+  - rm -rf untitled
+  - rm .babelrc
+  - rm .env
+  - rm .gitignore
+  - rm .travis.yml
+  - rm composer.json
+  - rm package.json
+  - rm phpunit.xml
+  - rm gulpfile.js
+  - rm coverage.xml
+  - rm composer.lock
+  - sudo apt-get install lftp
+  - bash deploy.sh
+
+cache:
+  directories:
+    - node_modules
+    - vendor
